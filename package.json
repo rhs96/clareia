@@ -1,0 +1,14 @@
+{
+  "name": "clareia",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "test": "node tests/monitor.cjs",
+    "build:portable": "tauri build --no-bundle"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

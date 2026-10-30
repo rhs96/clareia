@@ -1,0 +1,38 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const elements = new Map();
+const el = () => ({ value: '', addEventListener() {}, setAttribute() {}, textContent: '', innerHTML: '', hidden: false });
+const context = { document: { getElementById(id) { if (!elements.has(id)) elements.set(id, el()); return elements.get(id); } }, window: {}, setInterval() {}, setTimeout() {}, console, Map, Set, Date, Number, String, Object, Blob, URL };
+vm.createContext(context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../web/app.js'), 'utf8'), context);
+const run = s => vm.runInContext(s, context);
+run(`globalThis.old={time:1000,cores:4,connections:[],udp:[],processes:[{pid:9,startedTicks:'100',cpu:2}],network:{running:true,processes:{'9:100':{pid:9,startedTicks:'100',sent:100,received:200,tcpSent:100,tcpReceived:100,udpSent:0,udpReceived:100}}}};
+globalThis.now={time:3000,cores:4,connections:[{pid:9}],udp:[{pid:9}],processes:[{pid:9,startedTicks:'100',cpu:4,gpu:75}],network:{running:true,processes:{'9:100':{pid:9,startedTicks:'100',sent:300,received:800,tcpSent:200,tcpReceived:300,udpSent:100,udpReceived:500,flows:{}}}}};`);
+assert.equal(run('derive(now,old)[0].cpuPercent'), 25);
+assert.equal(run('derive(now,old)[0].rates[""].received'), 300);
+assert.equal(run('derive(now,old)[0].rates.UDP.received'), 200);
+assert.equal(run('derive(now,old)[0].rates.TCP.sent'), 50);
+assert.equal(run('derive(now,old)[0].gpu'), 75);
+assert.equal(run('derive(now,old)[0].sockets.length'), 1);
+run("now.processes[0].startedTicks='300'");
+assert.equal(run('derive(now,old).find(p=>!p.archived).cpuPercent'), null);
+assert.equal(run('derive(now,old).find(p=>p.archived).traffic.sent'), 300);
+assert.equal(run('derive(now,old).find(p=>!p.archived).traffic'), undefined);
+run('old.network.running=false');
+assert.equal(run('derive(now,old)[0].rates.UDP.received'), null);
+assert.equal(run("esc('<script>')"), '&lt;script&gt;');
+assert.equal(run('derive(now,undefined)[0].cpuPercent'), null);
+run('apps=derive(now,old);current=now;');elements.set('trafficMode', {...el(),value:'session'});run('render()');
+assert.match(elements.get('rows').innerHTML, /300 B na sessão/);
+run('now.time=5000;updateSignals(now)');run('now.time=26000;updateSignals(now)');
+assert.match(elements.get('signalsText').textContent, /uso elevado persistente/);
+elements.get('trafficMode').value='now';run('render()');assert.equal(elements.get('empty').hidden,false);elements.get('trafficMode').value='session';run('render()');
+console.log('PASS: CPU, GPU, taxas TCP/UDP, sockets, processo encerrado, reutilização de PID, indisponibilidade e sinais persistentes');
+(async () => {
+  run("current=undefined;window.__TAURI__={core:{invoke:()=>new Promise(r=>{globalThis.release=r})}};busy=false;paused=false;");
+  const pending = run('poll()'); run('paused=true;generation++;release({})'); await pending;
+  assert.equal(run('current'), undefined);
+  console.log('PASS: resposta em andamento ignorada após pausa');
+})().catch(e => { console.error(e); process.exitCode = 1; });
+

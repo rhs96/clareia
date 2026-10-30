@@ -1,0 +1,42 @@
+{
+  "productName": "Clareia",
+  "version": "0.3.0",
+  "identifier": "local.clareia.monitor",
+  "build": {
+    "frontendDist": "../web"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Clareia · Sua conexão, à vista",
+        "width": 1250,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 650,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self'; script-src 'self'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU1RTVCQUQ4QTVBRUJFOTUKUldTVnZxNmwyTHJsVllYU2ErcEpVQXI4ZkVRVEhRK21qb2poemxVV1d1U3RBN1ZUZzc3OXBsODAK",
+      "windows": {
+        "installMode": "passive"
+      },
+      "endpoints": [
+        "https://github.com/rhs96/clareia/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}
