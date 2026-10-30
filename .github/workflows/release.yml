@@ -17,6 +17,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
       - run: npm test
+      - run: ./tests/maintenance.ps1
       - run: cargo test --manifest-path src-tauri/Cargo.toml --release
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -31,3 +32,4 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
           args: --bundles nsis
+
